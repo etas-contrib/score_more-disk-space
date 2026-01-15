@@ -19,13 +19,12 @@ inputs:
   before_ws_avail:
     description: Available bytes on workspace before cleanup
     required: true
+  start_ts:
+    description: Start timestamp in seconds from measure-before
+    required: true
 runs:
   using: composite
   steps:
-    - name: End timer
-      shell: bash
-      run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
-
     - name: Measure space after
       id: after
       shell: bash
@@ -40,6 +39,8 @@ runs:
     - name: Compute metrics CSV
       shell: bash
       run: |
+        END_TS=$(date +%s)
+        START_TS="${{ inputs.start_ts }}"
         DURATION=$((END_TS - START_TS))
         FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ inputs.before_root_avail }} ))
         FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ inputs.before_ws_avail }} ))

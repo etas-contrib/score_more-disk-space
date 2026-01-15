@@ -21,8 +21,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  path: /tmp/repo
 
             - name: Measure before
               id: before
@@ -66,6 +64,7 @@ jobs:
                   repeat: ${{ matrix.repeat }}
                   before_root_avail: ${{ steps.before.outputs.root_avail }}
                   before_ws_avail: ${{ steps.before.outputs.ws_avail }}
+                  start_ts: ${{ steps.before.outputs.start_ts }}
 
     jlumbroso:
         name: jlumbroso | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
@@ -79,8 +78,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  path: /tmp/repo
 
             - name: Measure before
               id: before
@@ -131,6 +128,7 @@ jobs:
                   repeat: ${{ matrix.repeat }}
                   before_root_avail: ${{ steps.before.outputs.root_avail }}
                   before_ws_avail: ${{ steps.before.outputs.ws_avail }}
+                  start_ts: ${{ steps.before.outputs.start_ts }}
 
     enderson:
         name: enderson | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
@@ -144,8 +142,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  path: /tmp/repo
 
             - name: Measure before
               id: before
@@ -202,6 +198,7 @@ jobs:
                   repeat: ${{ matrix.repeat }}
                   before_root_avail: ${{ steps.before.outputs.root_avail }}
                   before_ws_avail: ${{ steps.before.outputs.ws_avail }}
+                  start_ts: ${{ steps.before.outputs.start_ts }}
 
     easimon:
         name: easimon | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
@@ -213,10 +210,8 @@ jobs:
                 intensity: [fast, standard, max]
                 repeat: [1, 2, 3]
         steps:
-            - name: Checkout repository to temp
+            - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  path: /tmp/repo
 
             - name: Measure before
               id: before
@@ -273,6 +268,7 @@ jobs:
                   repeat: ${{ matrix.repeat }}
                   before_root_avail: ${{ steps.before.outputs.root_avail }}
                   before_ws_avail: ${{ steps.before.outputs.ws_avail }}
+                  start_ts: ${{ steps.before.outputs.start_ts }}
 
     adityagarg:
         name: adityagarg | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
@@ -286,8 +282,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  path: /tmp/repo
 
             - name: Measure before
               id: before
@@ -344,6 +338,7 @@ jobs:
                   repeat: ${{ matrix.repeat }}
                   before_root_avail: ${{ steps.before.outputs.root_avail }}
                   before_ws_avail: ${{ steps.before.outputs.ws_avail }}
+                  start_ts: ${{ steps.before.outputs.start_ts }}
 
     aggregate:
         name: Aggregate results
