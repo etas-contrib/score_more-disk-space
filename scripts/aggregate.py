@@ -21,6 +21,7 @@ with open(combined_path, newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f)
     rows = list(reader)
 
+# Group results by (image, option, intensity) combination and sum metrics across repeats
 for r in rows:
     key = (r["image"], r["option"], r["intensity"])
     g = groups[key]
@@ -38,10 +39,12 @@ def fmt_gib(bytes_: int) -> str:
 lines: list[str] = []
 lines.append("## Disk Space Benchmark Summary\n")
 lines.append("\n")
+# Generate markdown table with averages. Integer division used for consistency with CSV values.
 lines.append(
     "Image | Option | Intensity | Avg Freed (Workspace) | Avg Freed (Root) | Avg Duration\n"
 )
 lines.append("--- | --- | --- | --- | --- | ---\n")
+# Compute averages for each (image, option, intensity) group
 for (image, option, intensity), g in sorted(groups.items()):
     c = g["count"] or 1
     avg_ws = g["sum_freed_ws"] // c
@@ -55,7 +58,8 @@ summary = "".join(lines)
 print(summary)
 with open(summary_path, "w", encoding="utf-8") as f:
     f.write(summary)
-    # Append Mermaid xychart with avg workspace freed per group
+    # Append Mermaid xychart visualizing average workspace freed per combination.
+    # Limited to 50 data points for readability (safety cap).
     f.write("\n\n")
     f.write("```mermaid\n")
     f.write("xychart-beta\n")

@@ -1,5 +1,9 @@
 name: Measure space after cleanup
 description: Ends timer, measures disk space, computes metrics, and uploads CSV artifact
+# This action runs after cleanup actions. For easimon jobs which remount the workspace,
+# the action must be inlined directly in the workflow (see easimon job).
+# Accepts start_ts as input to compute duration without relying on environment variables
+# that may be lost during workspace operations.
 inputs:
   image:
     description: Runner image name

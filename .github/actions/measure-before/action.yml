@@ -1,5 +1,8 @@
 name: Measure space before cleanup
 description: Prepares metrics directory, measures disk space, and starts timer
+# This action captures the baseline disk state and starts the timer.
+# Outputs are used by measure-after to compute freed space and duration.
+# start_ts must be passed through step outputs (not env vars) to survive workspace remounts.
 outputs:
   root_avail:
     description: Available bytes on root filesystem

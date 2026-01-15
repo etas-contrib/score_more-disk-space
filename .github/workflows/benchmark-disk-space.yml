@@ -4,9 +4,20 @@ on:
     workflow_dispatch:
         inputs:
             repeats:
-                description: "Number of repetitions per combination (static 3 for now)"
+                description: "Number of repetitions per combination (1-5)"
                 required: false
                 default: "3"
+                type: choice
+                options:
+                  - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+
+# Matrix generation uses fromJSON + format + join + range to dynamically create
+# [1], [1,2], [1,2,3], etc. based on the user-provided repeats input.
+# Example: inputs.repeats=3 generates repeat: [1, 2, 3]
 
 jobs:
     manual:
@@ -16,8 +27,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [fast, standard, max]
-                repeat: [1, 2, 3]
+                intensity: [minimal, light, standard, max]
+                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -28,25 +39,30 @@ jobs:
 
             - name: Manual cleanup (${{ matrix.intensity }})
               shell: bash
+              # Removes large directories progressively based on intensity:
+              # minimal: dotnet only (~0.5-1 GiB)
+              # light: + ghc (~0.5 GiB more)
+              # standard: + android + swift (~5-7 GiB more)
+              # max: + chromium + toolcache + docker prune + swap (~10+ GiB more)
               run: |
                 INTENSITY="${{ matrix.intensity }}"
                 echo "Manual cleanup intensity: $INTENSITY"
-                if [[ "$INTENSITY" == "fast" ]]; then
+                if [[ "$INTENSITY" == "minimal" ]]; then
+                  [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
+                fi
+                if [[ "$INTENSITY" == "light" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                   [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
-                  [[ -d /usr/local/.ghcup ]] && { echo "Removing ghcup"; sudo rm -rf /usr/local/.ghcup; }
                 fi
                 if [[ "$INTENSITY" == "standard" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                   [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
-                  [[ -d /usr/local/.ghcup ]] && { echo "Removing ghcup"; sudo rm -rf /usr/local/.ghcup; }
                   [[ -d /usr/local/lib/android ]] && { echo "Removing android"; sudo rm -rf /usr/local/lib/android; }
                   [[ -d /usr/share/swift ]] && { echo "Removing swift"; sudo rm -rf /usr/share/swift; }
                 fi
                 if [[ "$INTENSITY" == "max" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                   [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
-                  [[ -d /usr/local/.ghcup ]] && { echo "Removing ghcup"; sudo rm -rf /usr/local/.ghcup; }
                   [[ -d /usr/local/lib/android ]] && { echo "Removing android"; sudo rm -rf /usr/local/lib/android; }
                   [[ -d /usr/share/swift ]] && { echo "Removing swift"; sudo rm -rf /usr/share/swift; }
                   [[ -d /usr/local/share/chromium ]] && { echo "Removing chromium"; sudo rm -rf /usr/local/share/chromium; }
@@ -73,8 +89,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [fast, standard, max]
-                repeat: [1, 2, 3]
+                intensity: [minimal, light, standard, max]
+                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -83,13 +99,25 @@ jobs:
               id: before
               uses: ./.github/actions/measure-before
 
-            - name: jlumbroso (fast)
-              if: ${{ matrix.intensity == 'fast' }}
+            - name: jlumbroso (minimal)
+              if: ${{ matrix.intensity == 'minimal' }}
               uses: jlumbroso/free-disk-space@v1.3.1
               with:
                   tool-cache: true
                   android: false
                   dotnet: false
+                  haskell: false
+                  large-packages: false
+                  docker-images: false
+                  swap-storage: false
+
+            - name: jlumbroso (light)
+              if: ${{ matrix.intensity == 'light' }}
+              uses: jlumbroso/free-disk-space@v1.3.1
+              with:
+                  tool-cache: true
+                  android: true
+                  dotnet: true
                   haskell: false
                   large-packages: false
                   docker-images: true
@@ -99,7 +127,7 @@ jobs:
               if: ${{ matrix.intensity == 'standard' }}
               uses: jlumbroso/free-disk-space@v1.3.1
               with:
-                  tool-cache: false
+                  tool-cache: true
                   android: true
                   dotnet: true
                   haskell: false
@@ -137,8 +165,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [fast, standard, max]
-                repeat: [1, 2, 3]
+                intensity: [minimal, light, standard, max]
+                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -147,12 +175,26 @@ jobs:
               id: before
               uses: ./.github/actions/measure-before
 
-            - name: enderson (fast)
-              if: ${{ matrix.intensity == 'fast' }}
+            - name: enderson (minimal)
+              if: ${{ matrix.intensity == 'minimal' }}
               uses: endersonmenezes/free-disk-space@v3
               with:
                   remove_android: false
                   remove_dotnet: false
+                  remove_haskell: false
+                  remove_tool_cache: true
+                  remove_swap: false
+                  remove_packages_one_command: false
+                  remove_packages: ""
+                  remove_folders: ""
+                  rm_cmd: rm
+
+            - name: enderson (light)
+              if: ${{ matrix.intensity == 'light' }}
+              uses: endersonmenezes/free-disk-space@v3
+              with:
+                  remove_android: true
+                  remove_dotnet: true
                   remove_haskell: false
                   remove_tool_cache: true
                   remove_swap: false
@@ -167,9 +209,9 @@ jobs:
               with:
                   remove_android: true
                   remove_dotnet: true
-                  remove_haskell: false
+                  remove_haskell: true
                   remove_tool_cache: true
-                  remove_swap: false
+                  remove_swap: true
                   remove_packages_one_command: false
                   remove_packages: ""
                   remove_folders: ""
@@ -207,8 +249,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [fast, standard, max]
-                repeat: [1, 2, 3]
+                intensity: [light, standard, max]
+                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -300,8 +342,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [fast, standard, max]
-                repeat: [1, 2, 3]
+                intensity: [minimal, light, standard, max]
+                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -310,16 +352,30 @@ jobs:
               id: before
               uses: ./.github/actions/measure-before
 
-            - name: adityagarg (fast)
-              if: ${{ matrix.intensity == 'fast' }}
+            - name: AdityaGarg8 (minimal)
+              if: ${{ matrix.intensity == 'minimal' }}
               uses: AdityaGarg8/remove-unwanted-software@v5
               with:
-                  remove-dotnet: false
+                  remove-dotnet: true
                   remove-android: false
                   remove-haskell: false
                   remove-codeql: false
-                  remove-docker-images: true
+                  remove-docker-images: false
                   remove-large-packages: false
+                  remove-cached-tools: false
+                  remove-swapfile: false
+                  verbose: false
+
+            - name: AdityaGarg8 (light)
+              if: ${{ matrix.intensity == 'light' }}
+              uses: AdityaGarg8/remove-unwanted-software@v5
+              with:
+                  remove-dotnet: true
+                  remove-android: true
+                  remove-haskell: false
+                  remove-codeql: false
+                  remove-docker-images: false
+                  remove-large-packages: true
                   remove-cached-tools: false
                   remove-swapfile: false
                   verbose: false
@@ -330,9 +386,9 @@ jobs:
               with:
                   remove-dotnet: true
                   remove-android: true
-                  remove-haskell: false
-                  remove-codeql: false
-                  remove-docker-images: true
+                  remove-haskell: true
+                  remove-codeql: true
+                  remove-docker-images: false
                   remove-large-packages: true
                   remove-cached-tools: false
                   remove-swapfile: false
