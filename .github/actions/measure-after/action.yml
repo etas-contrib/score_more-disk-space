@@ -1,0 +1,57 @@
+name: Measure space after cleanup
+description: Ends timer, measures disk space, computes metrics, and uploads CSV artifact
+inputs:
+  image:
+    description: Runner image name
+    required: true
+  option:
+    description: Cleanup option name
+    required: true
+  intensity:
+    description: Intensity level (fast/standard/max)
+    required: true
+  repeat:
+    description: Repeat number
+    required: true
+  before_root_avail:
+    description: Available bytes on root before cleanup
+    required: true
+  before_ws_avail:
+    description: Available bytes on workspace before cleanup
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: End timer
+      shell: bash
+      run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+    - name: Measure space after
+      id: after
+      shell: bash
+      run: |
+        ROOT_AVAIL=$(df --output=avail -B1 / | tail -1)
+        WS_PATH=${GITHUB_WORKSPACE:-$PWD}
+        WS_AVAIL=$(df --output=avail -B1 "$WS_PATH" | tail -1)
+        echo "root_avail=$ROOT_AVAIL" >> "$GITHUB_OUTPUT"
+        echo "ws_path=$WS_PATH" >> "$GITHUB_OUTPUT"
+        echo "ws_avail=$WS_AVAIL" >> "$GITHUB_OUTPUT"
+
+    - name: Compute metrics CSV
+      shell: bash
+      run: |
+        DURATION=$((END_TS - START_TS))
+        FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ inputs.before_root_avail }} ))
+        FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ inputs.before_ws_avail }} ))
+        mkdir -p metrics
+        OUT=metrics/metrics.csv
+        if [[ ! -s "$OUT" ]]; then
+          echo "image,option,intensity,repeat,before_root,after_root,freed_root,before_ws,after_ws,freed_ws,duration_seconds" > "$OUT"
+        fi
+        echo "${{ inputs.image }},${{ inputs.option }},${{ inputs.intensity }},${{ inputs.repeat }},${{ inputs.before_root_avail }},${{ steps.after.outputs.root_avail }},$FREED_ROOT,${{ inputs.before_ws_avail }},${{ steps.after.outputs.ws_avail }},$FREED_WS,$DURATION" >> "$OUT"
+
+    - name: Upload metrics artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: metrics-${{ inputs.image }}-${{ inputs.option }}-${{ inputs.intensity }}-${{ inputs.repeat }}
+        path: metrics/metrics.csv

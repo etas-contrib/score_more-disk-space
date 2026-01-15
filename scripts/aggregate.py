@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Aggregate benchmark metrics and generate summary with Mermaid chart."""
+
 import csv
 import sys
 from collections import defaultdict
@@ -10,10 +12,12 @@ if len(sys.argv) < 3:
 combined_path = sys.argv[1]
 summary_path = sys.argv[2]
 
-groups = defaultdict(
+groups: dict[tuple[str, str, str], dict[str, int]] = defaultdict(
     lambda: {"count": 0, "sum_freed_root": 0, "sum_freed_ws": 0, "sum_dur": 0}
 )
-with open(combined_path, newline="") as f:
+
+rows: list[dict[str, str]] = []
+with open(combined_path, newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f)
     rows = list(reader)
 
@@ -26,11 +30,12 @@ for r in rows:
     g["sum_dur"] += int(r["duration_seconds"])
 
 
-def fmt_gib(bytes_):
+def fmt_gib(bytes_: int) -> str:
+    """Format bytes as GiB with 2 decimal places."""
     return f"{bytes_ / (1024**3):.2f} GiB"
 
 
-lines = []
+lines: list[str] = []
 lines.append("## Disk Space Benchmark Summary\n")
 lines.append("\n")
 lines.append(
@@ -48,7 +53,7 @@ for (image, option, intensity), g in sorted(groups.items()):
 
 summary = "".join(lines)
 print(summary)
-with open(summary_path, "w") as f:
+with open(summary_path, "w", encoding="utf-8") as f:
     f.write(summary)
     # Append Mermaid xychart with avg workspace freed per group
     f.write("\n\n")
@@ -61,7 +66,7 @@ with open(summary_path, "w") as f:
     f.write("    - title: Workspace\n")
     f.write("      data:\n")
     # Use all groups; limit to a reasonable number if excessive
-    count = 0
+    chart_count = 0
     for (image, option, intensity), g in sorted(groups.items()):
         avg_ws = (g["sum_freed_ws"] // (g["count"] or 1)) / (1024**3)
         # Cap to two decimals for readability
@@ -69,7 +74,7 @@ with open(summary_path, "w") as f:
         label = f"{image}/{option}/{intensity}"
         f.write(f"        - x: {label}\n")
         f.write(f"          y: {yval}\n")
-        count += 1
-        if count >= 50:  # safety cap
+        chart_count += 1
+        if chart_count >= 50:  # safety cap
             break
     f.write("```\n")
