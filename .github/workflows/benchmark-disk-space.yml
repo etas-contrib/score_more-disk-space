@@ -177,7 +177,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [default, minimal, light, standard, max]
+                intensity: [minimal, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -186,10 +186,6 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
-
-            - name: enderson (default)
-              if: ${{ matrix.intensity == 'default' }}
-              uses: endersonmenezes/free-disk-space@v3
 
             - name: enderson (minimal)
               if: ${{ matrix.intensity == 'minimal' }}
@@ -365,7 +361,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [default, minimal, light, standard, max]
+                intensity: [minimal, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -374,10 +370,6 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
-
-            - name: AdityaGarg8 (default)
-              if: ${{ matrix.intensity == 'default' }}
-              uses: AdityaGarg8/remove-unwanted-software@v5
 
             - name: AdityaGarg8 (minimal)
               if: ${{ matrix.intensity == 'minimal' }}
