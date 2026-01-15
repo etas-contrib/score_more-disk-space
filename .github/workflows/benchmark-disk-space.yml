@@ -1,0 +1,451 @@
+name: Benchmark Disk Space Options
+
+on:
+    workflow_dispatch:
+        inputs:
+            repeats:
+                description: "Number of repetitions per combination (static 3 for now)"
+                required: false
+                default: "3"
+
+jobs:
+    manual:
+        name: Manual | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
+        runs-on: ${{ matrix.image }}
+        strategy:
+            fail-fast: false
+            matrix:
+                image: [ubuntu-22.04, ubuntu-24.04]
+                intensity: [fast, standard, max]
+                repeat: [1, 2, 3]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Prepare metrics dir
+              run: mkdir -p metrics
+
+            - name: Measure space before
+              id: before
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Start timer
+              run: echo "START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Manual cleanup (${{ matrix.intensity }})
+              shell: bash
+              run: bash scripts/manual_cleanup.sh ${{ matrix.intensity }}
+
+            - name: End timer
+              run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                  DURATION=$((END_TS - START_TS))
+                  bash scripts/compute_metrics.sh \
+                    "${{ matrix.image }}" manual "${{ matrix.intensity }}" "${{ matrix.repeat }}" \
+                    "${{ steps.before.outputs.root_avail }}" "${{ steps.after.outputs.root_avail }}" \
+                    "${{ steps.before.outputs.ws_avail }}" "${{ steps.after.outputs.ws_avail }}" \
+                    "$DURATION"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: metrics-${{ matrix.image }}-manual-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
+
+    jlumbroso:
+        name: jlumbroso | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
+        runs-on: ${{ matrix.image }}
+        strategy:
+            fail-fast: false
+            matrix:
+                image: [ubuntu-22.04, ubuntu-24.04]
+                intensity: [fast, standard, max]
+                repeat: [1, 2, 3]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Prepare metrics dir
+              run: mkdir -p metrics
+
+            - name: Measure space before
+              id: before
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Start timer
+              run: echo "START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: jlumbroso (fast)
+              if: ${{ matrix.intensity == 'fast' }}
+              uses: jlumbroso/free-disk-space@v1.3.1
+              with:
+                  tool-cache: false
+                  android: false
+                  dotnet: false
+                  haskell: false
+                  large-packages: false
+                  docker-images: true
+                  swap-storage: false
+
+            - name: jlumbroso (standard)
+              if: ${{ matrix.intensity == 'standard' }}
+              uses: jlumbroso/free-disk-space@v1.3.1
+              with:
+                  tool-cache: false
+                  android: true
+                  dotnet: true
+                  haskell: false
+                  large-packages: true
+                  docker-images: true
+                  swap-storage: false
+
+            - name: jlumbroso (max)
+              if: ${{ matrix.intensity == 'max' }}
+              uses: jlumbroso/free-disk-space@v1.3.1
+              with:
+                  tool-cache: true
+                  android: true
+                  dotnet: true
+                  haskell: true
+                  large-packages: true
+                  docker-images: true
+                  swap-storage: true
+
+            - name: End timer
+              run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                  DURATION=$((END_TS - START_TS))
+                  bash scripts/compute_metrics.sh \
+                    "${{ matrix.image }}" jlumbroso "${{ matrix.intensity }}" "${{ matrix.repeat }}" \
+                    "${{ steps.before.outputs.root_avail }}" "${{ steps.after.outputs.root_avail }}" \
+                    "${{ steps.before.outputs.ws_avail }}" "${{ steps.after.outputs.ws_avail }}" \
+                    "$DURATION"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: metrics-${{ matrix.image }}-jlumbroso-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
+
+    enderson:
+        name: enderson | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
+        runs-on: ${{ matrix.image }}
+        strategy:
+            fail-fast: false
+            matrix:
+                image: [ubuntu-22.04, ubuntu-24.04]
+                intensity: [fast, standard, max]
+                repeat: [1, 2, 3]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Prepare metrics dir
+              run: mkdir -p metrics
+
+            - name: Measure space before
+              id: before
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Start timer
+              run: echo "START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: enderson (fast)
+              if: ${{ matrix.intensity == 'fast' }}
+              uses: endersonmenezes/free-disk-space@v3
+              with:
+                  remove_android: false
+                  remove_dotnet: false
+                  remove_haskell: false
+                  remove_tool_cache: false
+                  remove_swap: false
+                  remove_packages_one_command: false
+                  remove_packages: ""
+                  remove_folders: ""
+                  rm_cmd: rm
+
+            - name: enderson (standard)
+              if: ${{ matrix.intensity == 'standard' }}
+              uses: endersonmenezes/free-disk-space@v3
+              with:
+                  remove_android: true
+                  remove_dotnet: true
+                  remove_haskell: false
+                  remove_tool_cache: false
+                  remove_swap: false
+                  remove_packages_one_command: false
+                  remove_packages: ""
+                  remove_folders: ""
+                  rm_cmd: rm
+
+            - name: enderson (max)
+              if: ${{ matrix.intensity == 'max' }}
+              uses: endersonmenezes/free-disk-space@v3
+              with:
+                  remove_android: true
+                  remove_dotnet: true
+                  remove_haskell: true
+                  remove_tool_cache: true
+                  remove_swap: true
+                  remove_packages_one_command: true
+                  remove_packages: "azure-cli google-cloud-cli microsoft-edge-stable google-chrome-stable firefox postgresql* temurin-* *llvm* mysql* dotnet-sdk-*"
+                  remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share/az* /usr/local/lib/node_modules /usr/local/share/chromium /usr/local/share/powershell /usr/local/julia /usr/local/aws-cli /usr/local/aws-sam-cli /usr/share/gradle"
+                  rm_cmd: rm
+
+            - name: End timer
+              run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                  DURATION=$((END_TS - START_TS))
+                  bash scripts/compute_metrics.sh \
+                    "${{ matrix.image }}" enderson "${{ matrix.intensity }}" "${{ matrix.repeat }}" \
+                    "${{ steps.before.outputs.root_avail }}" "${{ steps.after.outputs.root_avail }}" \
+                    "${{ steps.before.outputs.ws_avail }}" "${{ steps.after.outputs.ws_avail }}" \
+                    "$DURATION"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: metrics-${{ matrix.image }}-enderson-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
+
+    easimon:
+        name: easimon | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
+        runs-on: ${{ matrix.image }}
+        strategy:
+            fail-fast: false
+            matrix:
+                image: [ubuntu-22.04, ubuntu-24.04]
+                intensity: [fast, standard, max]
+                repeat: [1, 2, 3]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Prepare metrics dir
+              run: mkdir -p metrics
+
+            - name: Measure space before
+              id: before
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Start timer
+              run: echo "START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: easimon (fast)
+              if: ${{ matrix.intensity == 'fast' }}
+              uses: easimon/maximize-build-space@v10
+              with:
+                  root-reserve-mb: "1024"
+                  temp-reserve-mb: "100"
+                  swap-size-mb: "4096"
+                  overprovision-lvm: false
+                  remove-dotnet: false
+                  remove-android: false
+                  remove-haskell: false
+                  remove-codeql: false
+                  remove-docker-images: true
+
+            - name: easimon (standard)
+              if: ${{ matrix.intensity == 'standard' }}
+              uses: easimon/maximize-build-space@v10
+              with:
+                  root-reserve-mb: "1024"
+                  temp-reserve-mb: "100"
+                  swap-size-mb: "4096"
+                  overprovision-lvm: false
+                  remove-dotnet: true
+                  remove-android: true
+                  remove-haskell: false
+                  remove-codeql: false
+                  remove-docker-images: true
+
+            - name: easimon (max)
+              if: ${{ matrix.intensity == 'max' }}
+              uses: easimon/maximize-build-space@v10
+              with:
+                  root-reserve-mb: "512"
+                  temp-reserve-mb: "50"
+                  swap-size-mb: "1024"
+                  overprovision-lvm: true
+                  remove-dotnet: true
+                  remove-android: true
+                  remove-haskell: true
+                  remove-codeql: true
+                  remove-docker-images: true
+
+            - name: End timer
+              run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                  DURATION=$((END_TS - START_TS))
+                  bash scripts/compute_metrics.sh \
+                    "${{ matrix.image }}" easimon "${{ matrix.intensity }}" "${{ matrix.repeat }}" \
+                    "${{ steps.before.outputs.root_avail }}" "${{ steps.after.outputs.root_avail }}" \
+                    "${{ steps.before.outputs.ws_avail }}" "${{ steps.after.outputs.ws_avail }}" \
+                    "$DURATION"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: metrics-${{ matrix.image }}-easimon-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
+
+    adityagarg:
+        name: adityagarg | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
+        runs-on: ${{ matrix.image }}
+        strategy:
+            fail-fast: false
+            matrix:
+                image: [ubuntu-22.04, ubuntu-24.04]
+                intensity: [fast, standard, max]
+                repeat: [1, 2, 3]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Prepare metrics dir
+              run: mkdir -p metrics
+
+            - name: Measure space before
+              id: before
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Start timer
+              run: echo "START_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: adityagarg (fast)
+              if: ${{ matrix.intensity == 'fast' }}
+              uses: AdityaGarg8/remove-unwanted-software@v5
+              with:
+                  remove-dotnet: false
+                  remove-android: false
+                  remove-haskell: false
+                  remove-codeql: false
+                  remove-docker-images: true
+                  remove-large-packages: false
+                  remove-cached-tools: false
+                  remove-swapfile: false
+                  verbose: false
+
+            - name: adityagarg (standard)
+              if: ${{ matrix.intensity == 'standard' }}
+              uses: AdityaGarg8/remove-unwanted-software@v5
+              with:
+                  remove-dotnet: true
+                  remove-android: true
+                  remove-haskell: false
+                  remove-codeql: false
+                  remove-docker-images: true
+                  remove-large-packages: true
+                  remove-cached-tools: false
+                  remove-swapfile: false
+                  verbose: false
+
+            - name: adityagarg (max)
+              if: ${{ matrix.intensity == 'max' }}
+              uses: AdityaGarg8/remove-unwanted-software@v5
+              with:
+                  remove-dotnet: true
+                  remove-android: true
+                  remove-haskell: true
+                  remove-codeql: true
+                  remove-docker-images: true
+                  remove-large-packages: true
+                  remove-cached-tools: true
+                  remove-swapfile: true
+                  verbose: false
+
+            - name: End timer
+              run: echo "END_TS=$(date +%s)" >> "$GITHUB_ENV"
+
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: bash scripts/measure_space.sh
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                  DURATION=$((END_TS - START_TS))
+                  bash scripts/compute_metrics.sh \
+                    "${{ matrix.image }}" adityagarg "${{ matrix.intensity }}" "${{ matrix.repeat }}" \
+                    "${{ steps.before.outputs.root_avail }}" "${{ steps.after.outputs.root_avail }}" \
+                    "${{ steps.before.outputs.ws_avail }}" "${{ steps.after.outputs.ws_avail }}" \
+                    "$DURATION"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: metrics-${{ matrix.image }}-adityagarg-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
+
+    aggregate:
+        name: Aggregate results
+        runs-on: ubuntu-24.04
+        needs: [manual, jlumbroso, enderson, easimon, adityagarg]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+            - name: Download all metrics
+              uses: actions/download-artifact@v4
+              with:
+                  path: all-metrics
+
+            - name: Combine CSVs
+              id: combine
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  OUT=combined.csv
+                  echo "image,option,intensity,repeat,before_root,after_root,freed_root,before_ws,after_ws,freed_ws,duration_seconds" > "$OUT"
+                  find all-metrics -name "metrics.csv" -print0 | xargs -0 -I{} sh -c 'tail -n +2 "{}"' >> "$OUT"
+                  echo "combined_csv_path=$OUT" >> "$GITHUB_OUTPUT"
+                  wc -l "$OUT" || true
+
+            - name: Compute averages and summary
+              shell: bash
+              run: |
+                  python3 scripts/aggregate.py combined.csv summary.md
+                  {
+                    echo '## Raw Combined Metrics (CSV)'
+                    echo
+                    echo 'Download the combined.csv artifact for details.'
+                  } >> "$GITHUB_STEP_SUMMARY"
+                  cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Upload combined CSV
+              uses: actions/upload-artifact@v4
+              with:
+                  name: combined-metrics
+                  path: combined.csv
