@@ -87,7 +87,7 @@ jobs:
               if: ${{ matrix.intensity == 'fast' }}
               uses: jlumbroso/free-disk-space@v1.3.1
               with:
-                  tool-cache: false
+                  tool-cache: true
                   android: false
                   dotnet: false
                   haskell: false
@@ -154,7 +154,7 @@ jobs:
                   remove_android: false
                   remove_dotnet: false
                   remove_haskell: false
-                  remove_tool_cache: false
+                  remove_tool_cache: true
                   remove_swap: false
                   remove_packages_one_command: false
                   remove_packages: ""
@@ -168,7 +168,7 @@ jobs:
                   remove_android: true
                   remove_dotnet: true
                   remove_haskell: false
-                  remove_tool_cache: false
+                  remove_tool_cache: true
                   remove_swap: false
                   remove_packages_one_command: false
                   remove_packages: ""
@@ -259,16 +259,39 @@ jobs:
                   remove-codeql: true
                   remove-docker-images: true
 
-            - name: Measure after
-              uses: ./.github/actions/measure-after
+            - name: Measure space after
+              id: after
+              shell: bash
+              run: |
+                set -euo pipefail
+                ROOT_AVAIL=$(df --output=avail -B1 / | tail -1)
+                WS_PATH=${GITHUB_WORKSPACE:-$PWD}
+                WS_AVAIL=$(df --output=avail -B1 "$WS_PATH" | tail -1)
+                echo "root_avail=$ROOT_AVAIL" >> "$GITHUB_OUTPUT"
+                echo "ws_path=$WS_PATH" >> "$GITHUB_OUTPUT"
+                echo "ws_avail=$WS_AVAIL" >> "$GITHUB_OUTPUT"
+
+            - name: Compute metrics CSV
+              shell: bash
+              run: |
+                set -euo pipefail
+                END_TS=$(date +%s)
+                START_TS="${{ steps.before.outputs.start_ts }}"
+                DURATION=$((END_TS - START_TS))
+                FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ steps.before.outputs.root_avail }} ))
+                FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ steps.before.outputs.ws_avail }} ))
+                mkdir -p metrics
+                OUT=metrics/metrics.csv
+                if [[ ! -f "$OUT" ]]; then
+                  echo "image,option,intensity,repeat,before_root,after_root,freed_root,before_ws,after_ws,freed_ws,duration_seconds" > "$OUT"
+                fi
+                echo "${{ matrix.image }},easimon,${{ matrix.intensity }},${{ matrix.repeat }},${{ steps.before.outputs.root_avail }},${{ steps.after.outputs.root_avail }},$FREED_ROOT,${{ steps.before.outputs.ws_avail }},${{ steps.after.outputs.ws_avail }},$FREED_WS,$DURATION" >> "$OUT"
+
+            - name: Upload metrics artifact
+              uses: actions/upload-artifact@v4
               with:
-                  image: ${{ matrix.image }}
-                  option: easimon
-                  intensity: ${{ matrix.intensity }}
-                  repeat: ${{ matrix.repeat }}
-                  before_root_avail: ${{ steps.before.outputs.root_avail }}
-                  before_ws_avail: ${{ steps.before.outputs.ws_avail }}
-                  start_ts: ${{ steps.before.outputs.start_ts }}
+                  name: metrics-${{ matrix.image }}-easimon-${{ matrix.intensity }}-${{ matrix.repeat }}
+                  path: metrics/metrics.csv
 
     adityagarg:
         name: adityagarg | ${{ matrix.image }} | ${{ matrix.intensity }} | rep ${{ matrix.repeat }}
