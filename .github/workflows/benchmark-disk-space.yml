@@ -46,33 +46,35 @@ jobs:
             - name: Manual cleanup (${{ matrix.intensity }})
               shell: bash
               # Removes large directories progressively based on intensity:
-              # minimal: dotnet only (~0.5-1 GiB)
-              # light: + ghc (~0.5 GiB more)
-              # standard: + android + swift (~5-7 GiB more)
-              # max: + chromium + toolcache + docker prune + swap (~10+ GiB more)
+              # default: no cleanup (baseline)
+              # minimal: dotnet only (~4 GiB)
+              # light: minimal + ghc + tool-cache (~10 GiB)
+              # standard: light + android + swift (~17 GiB)
+              # max: standard + chromium + docker prune + swap (~23 GiB)
               run: |
                 INTENSITY="${{ matrix.intensity }}"
                 echo "Manual cleanup intensity: $INTENSITY"
-                if [[ "$INTENSITY" == "minimal" ]]; then
+                if [[ "$INTENSITY" == "default" ]]; then
+                  echo "No cleanup (baseline measurement)"
+                elif [[ "$INTENSITY" == "minimal" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
-                fi
-                if [[ "$INTENSITY" == "light" ]]; then
-                  [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
-                  [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
-                fi
-                if [[ "$INTENSITY" == "standard" ]]; then
+                elif [[ "$INTENSITY" == "light" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                   [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
+                  [[ -d /opt/hostedtoolcache ]] && { echo "Removing tool-cache"; sudo rm -rf /opt/hostedtoolcache; }
+                elif [[ "$INTENSITY" == "standard" ]]; then
+                  [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
+                  [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
+                  [[ -d /opt/hostedtoolcache ]] && { echo "Removing tool-cache"; sudo rm -rf /opt/hostedtoolcache; }
                   [[ -d /usr/local/lib/android ]] && { echo "Removing android"; sudo rm -rf /usr/local/lib/android; }
                   [[ -d /usr/share/swift ]] && { echo "Removing swift"; sudo rm -rf /usr/share/swift; }
-                fi
-                if [[ "$INTENSITY" == "max" ]]; then
+                elif [[ "$INTENSITY" == "max" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                   [[ -d /opt/ghc ]] && { echo "Removing ghc"; sudo rm -rf /opt/ghc; }
+                  [[ -d /opt/hostedtoolcache ]] && { echo "Removing tool-cache"; sudo rm -rf /opt/hostedtoolcache; }
                   [[ -d /usr/local/lib/android ]] && { echo "Removing android"; sudo rm -rf /usr/local/lib/android; }
                   [[ -d /usr/share/swift ]] && { echo "Removing swift"; sudo rm -rf /usr/share/swift; }
                   [[ -d /usr/local/share/chromium ]] && { echo "Removing chromium"; sudo rm -rf /usr/local/share/chromium; }
-                  [[ -d /opt/hostedtoolcache ]] && { echo "Removing hosted toolcache"; sudo rm -rf /opt/hostedtoolcache; }
                   echo "Pruning docker images (if any)"; sudo docker system prune -af || true
                   echo "Disabling swap (if present)"; sudo swapoff -a || true; sudo rm -f /swapfile || true
                 fi
@@ -95,7 +97,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [minimal, light, standard, max]
+                intensity: [default, minimal, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -104,6 +106,10 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
+
+            - name: jlumbroso (default)
+              if: ${{ matrix.intensity == 'default' }}
+              uses: jlumbroso/free-disk-space@v1.3.1
 
             - name: jlumbroso (minimal)
               if: ${{ matrix.intensity == 'minimal' }}
@@ -171,7 +177,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [minimal, light, standard, max]
+                intensity: [default, minimal, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -180,6 +186,10 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
+
+            - name: enderson (default)
+              if: ${{ matrix.intensity == 'default' }}
+              uses: endersonmenezes/free-disk-space@v3
 
             - name: enderson (minimal)
               if: ${{ matrix.intensity == 'minimal' }}
@@ -249,7 +259,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [light, standard, max]
+                intensity: [default, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -258,6 +268,10 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
+
+            - name: easimon (default)
+              if: ${{ matrix.intensity == 'default' }}
+              uses: easimon/maximize-build-space@v10
 
             - name: easimon (light)
               if: ${{ matrix.intensity == 'light' }}
@@ -351,7 +365,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
-                intensity: [minimal, light, standard, max]
+                intensity: [default, minimal, light, standard, max]
                 repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
@@ -360,6 +374,10 @@ jobs:
             - name: Measure before
               id: before
               uses: ./.github/actions/measure-before
+
+            - name: AdityaGarg8 (default)
+              if: ${{ matrix.intensity == 'default' }}
+              uses: AdityaGarg8/remove-unwanted-software@v5
 
             - name: AdityaGarg8 (minimal)
               if: ${{ matrix.intensity == 'minimal' }}
