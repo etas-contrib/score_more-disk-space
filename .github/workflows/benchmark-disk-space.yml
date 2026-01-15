@@ -54,9 +54,7 @@ jobs:
               run: |
                 INTENSITY="${{ matrix.intensity }}"
                 echo "Manual cleanup intensity: $INTENSITY"
-                if [[ "$INTENSITY" == "default" ]]; then
-                  echo "No cleanup (baseline measurement)"
-                elif [[ "$INTENSITY" == "minimal" ]]; then
+                if [[ "$INTENSITY" == "minimal" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
                 elif [[ "$INTENSITY" == "light" ]]; then
                   [[ -d /usr/share/dotnet ]] && { echo "Removing dotnet"; sudo rm -rf /usr/share/dotnet; }
