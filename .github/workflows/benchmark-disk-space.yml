@@ -15,9 +15,15 @@ on:
                   - "4"
                   - "5"
 
-# Matrix generation uses fromJSON + format + join + range to dynamically create
-# [1], [1,2], [1,2,3], etc. based on the user-provided repeats input.
-# Example: inputs.repeats=3 generates repeat: [1, 2, 3]
+# The repeats input parameter dynamically controls the repeat array size.
+# Using logical operators (&& and ||) to map input values to repeat arrays:
+# '1' => [1]
+# '2' => [1, 2]
+# '3' => [1, 2, 3] (default)
+# '4' => [1, 2, 3, 4]
+# '5' => [1, 2, 3, 4, 5]
+# Note: Arithmetic operators (+, -) aren't supported in GitHub Actions expressions,
+# so conditional chaining is used instead.
 
 jobs:
     manual:
@@ -28,7 +34,7 @@ jobs:
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
                 intensity: [minimal, light, standard, max]
-                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
+                repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -90,7 +96,7 @@ jobs:
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
                 intensity: [minimal, light, standard, max]
-                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
+                repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -166,7 +172,7 @@ jobs:
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
                 intensity: [minimal, light, standard, max]
-                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
+                repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -250,7 +256,7 @@ jobs:
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
                 intensity: [light, standard, max]
-                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
+                repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -343,7 +349,7 @@ jobs:
             matrix:
                 image: [ubuntu-22.04, ubuntu-24.04]
                 intensity: [minimal, light, standard, max]
-                repeat: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.repeats) + 1)))) }}
+                repeat: ${{ fromJSON(inputs.repeats == '1' && '[1]' || inputs.repeats == '2' && '[1, 2]' || inputs.repeats == '3' && '[1, 2, 3]' || inputs.repeats == '4' && '[1, 2, 3, 4]' || '[1, 2, 3, 4, 5]') }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
