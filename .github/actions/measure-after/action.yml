@@ -48,6 +48,15 @@ runs:
         DURATION=$((END_TS - START_TS))
         FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ inputs.before_root_avail }} ))
         FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ inputs.before_ws_avail }} ))
+        
+        # Validate that cleanup freed at least 0.1 GB (107374182 bytes)
+        MIN_THRESHOLD=107374182
+        if [[ $FREED_WS -lt $MIN_THRESHOLD && $FREED_ROOT -lt $MIN_THRESHOLD ]]; then
+          echo "❌ Error: Cleanup freed less than 0.1 GB (freed_ws=$(echo "scale=2; $FREED_WS / 1073741824" | bc) GiB, freed_root=$(echo "scale=2; $FREED_ROOT / 1073741824" | bc) GiB)"
+          echo "This indicates the cleanup configuration is not working properly."
+          exit 1
+        fi
+        
         mkdir -p metrics
         OUT=metrics/metrics.csv
         if [[ ! -s "$OUT" ]]; then

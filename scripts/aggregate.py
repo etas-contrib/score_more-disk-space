@@ -41,17 +41,19 @@ lines.append("## Disk Space Benchmark Summary\n")
 lines.append("\n")
 # Generate markdown table with averages. Integer division used for consistency with CSV values.
 lines.append(
-    "Image | Option | Intensity | Avg Freed (Workspace) | Avg Freed (Root) | Avg Duration\n"
+    "Image | Option | Intensity | Avg Freed (Workspace) | Avg Freed (Root) | Avg Duration | GiB/sec\n"
 )
-lines.append("--- | --- | --- | --- | --- | ---\n")
+lines.append("--- | --- | --- | --- | --- | --- | ---\n")
 # Compute averages for each (image, option, intensity) group
 for (image, option, intensity), g in sorted(groups.items()):
     c = g["count"] or 1
     avg_ws = g["sum_freed_ws"] // c
     avg_root = g["sum_freed_root"] // c
     avg_dur = g["sum_dur"] // c
+    # Compute GiB/sec using workspace freed (avoid division by zero)
+    gib_per_sec = (avg_ws / (1024**3)) / avg_dur if avg_dur > 0 else 0
     lines.append(
-        f"{image} | {option} | {intensity} | {fmt_gib(avg_ws)} | {fmt_gib(avg_root)} | {avg_dur}s\n"
+        f"{image} | {option} | {intensity} | {fmt_gib(avg_ws)} | {fmt_gib(avg_root)} | {avg_dur}s | {gib_per_sec:.3f}\n"
     )
 
 summary = "".join(lines)

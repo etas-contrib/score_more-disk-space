@@ -191,8 +191,6 @@ jobs:
                   remove_tool_cache: true
                   remove_swap: false
                   remove_packages_one_command: false
-                  remove_packages: ""
-                  remove_folders: ""
                   rm_cmd: rm
 
             - name: enderson (light)
@@ -205,8 +203,6 @@ jobs:
                   remove_tool_cache: true
                   remove_swap: false
                   remove_packages_one_command: false
-                  remove_packages: ""
-                  remove_folders: ""
                   rm_cmd: rm
 
             - name: enderson (standard)
@@ -219,8 +215,6 @@ jobs:
                   remove_tool_cache: true
                   remove_swap: true
                   remove_packages_one_command: false
-                  remove_packages: ""
-                  remove_folders: ""
                   rm_cmd: rm
 
             - name: enderson (max)
@@ -265,8 +259,8 @@ jobs:
               id: before
               uses: ./.github/actions/measure-before
 
-            - name: easimon (fast)
-              if: ${{ matrix.intensity == 'fast' }}
+            - name: easimon (light)
+              if: ${{ matrix.intensity == 'light' }}
               uses: easimon/maximize-build-space@v10
               with:
                   root-reserve-mb: "1024"
@@ -328,6 +322,15 @@ jobs:
                 DURATION=$((END_TS - START_TS))
                 FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ steps.before.outputs.root_avail }} ))
                 FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ steps.before.outputs.ws_avail }} ))
+                
+                # Validate that cleanup freed at least 0.1 GB (107374182 bytes)
+                MIN_THRESHOLD=107374182
+                if [[ $FREED_WS -lt $MIN_THRESHOLD && $FREED_ROOT -lt $MIN_THRESHOLD ]]; then
+                  echo "❌ Error: Cleanup freed less than 0.1 GB (freed_ws=$(echo "scale=2; $FREED_WS / 1073741824" | bc) GiB, freed_root=$(echo "scale=2; $FREED_ROOT / 1073741824" | bc) GiB)"
+                  echo "This indicates the cleanup configuration is not working properly."
+                  exit 1
+                fi
+                
                 mkdir -p metrics
                 OUT=metrics/metrics.csv
                 if [[ ! -f "$OUT" ]]; then
