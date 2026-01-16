@@ -1,3 +1,16 @@
+<!--
+ Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+ See the NOTICE file(s) distributed with this work for additional
+ information regarding copyright ownership.
+
+ This program and the accompanying materials are made available under the
+ terms of the Apache License Version 2.0 which is available at
+ https://www.apache.org/licenses/LICENSE-2.0
+
+ SPDX-License-Identifier: Apache-2.0
+-->
+
 # Alternatives
 
 [← Back to main README](../README.md)
@@ -53,7 +66,7 @@ faster** at this level.
 **Result:** Others may clean more (up to 31 GiB), but they are **3-5× slower**
 than more-disk-space level 4.
 
-### Standard Cleanup (~20 GiB)
+### Massive Workspace Expansion (75+ GiB)
 
 | Action  | Space Freed | Duration (range) | GiB/sec (range) |
 | ------- | ----------- | ---------------- | --------------- |
@@ -103,10 +116,6 @@ creates natural breakpoints:
 **The breakpoint:** Android SDK at Level 4 is the final practical item. It's
 slow (51 seconds for 5.5 GiB) but adds massive space. Beyond that, APT tools
 become necessary.
-
----
-
-## Excluded: Different Trade-off Model
 
 ---
 
@@ -221,14 +230,15 @@ Complete inventory of deletable items from GitHub runners, categorized by risk
 level.
 
 ### 🟢 Safe to Delete (Included in more-disk-space levels)
-|---|---|---|---|
-| 1 | `/usr/share/dotnet` | 1-2 GiB | Level 3 | .NET runtime & SDKs |
-| 2 | `/usr/local/lib/android` | 5-6 GiB | Level 4 | Android SDK |
-| 3 | `/opt/ghc`, `/usr/local/.ghcup` | 1-1.5 GiB | Level 2 | Haskell compiler |
-| 4 | `/usr/share/swift` | 1-2 GiB | Level 1 | Swift compiler |
-| 5 | `/usr/share/miniconda` | 1-2 GiB | Level 3 | Conda Python environment |
-| 6 | `/usr/local/aws-cli` | 0.5-1 GiB | Level 2 | AWS CLI v2 |
-| 7 | `/usr/local/share/chromium` | 0.3-0.5 GiB | Level 1 | Chromium browser |
+| Level | Path(s)                         | Size        | Deletion Speed | Description              |
+| ----- | ------------------------------- | ----------- | -------------- |
+| 1     | `/usr/share/dotnet`             | 1-2 GiB     | Level 3        | .NET runtime & SDKs      |
+| 2     | `/usr/local/lib/android`        | 5-6 GiB     | Level 4        | Android SDK              |
+| 3     | `/opt/ghc`, `/usr/local/.ghcup` | 1-1.5 GiB   | Level 2        | Haskell compiler         |
+| 4     | `/usr/share/swift`              | 1-2 GiB     | Level 1        | Swift compiler           |
+| 5     | `/usr/share/miniconda`          | 1-2 GiB     | Level 3        | Conda Python environment |
+| 6     | `/usr/local/aws-cli`            | 0.5-1 GiB   | Level 2        | AWS CLI v2               |
+| 7     | `/usr/local/share/chromium`     | 0.3-0.5 GiB | Level 1        | Chromium browser         |
 
 **Also safe but not in more-disk-space** (due to APT overhead or marginal
 gains, while increasing deletion time):

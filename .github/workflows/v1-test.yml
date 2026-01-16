@@ -11,19 +11,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Note: "PR" is what will appear on the website as the workflow name, so keep it short.
-name: PR
+name: v1-test
 
 on:
-  # Run on Pull Requests
-  pull_request:
-    types: [opened, reopened, synchronize]
-
-  # Run once PR is accepted
-  # Hint: runs on a temp branch with PR and main branch pre-merged.
-  merge_group:
-    types: [checks_requested]
-
   # Run on manual trigger (for testing/debugging)
   workflow_dispatch:
 
@@ -40,4 +30,4 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Test action (default config)
-        uses: ./
+        uses: eclipse-score/more-disk-space@v1

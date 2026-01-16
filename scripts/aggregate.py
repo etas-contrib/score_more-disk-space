@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
 """Aggregate benchmark metrics and generate summary with Mermaid chart."""
 
 import csv
@@ -85,32 +98,3 @@ for (image, option, intensity), g in sorted(groups.items()):
 
 summary = "".join(lines)
 print(summary)
-with open(summary_path, "w", encoding="utf-8") as f:
-    f.write(summary)
-    # Append Mermaid xychart visualizing average workspace freed per combination.
-    # Limited to 50 data points for readability (safety cap).
-    f.write("\n\n")
-    f.write("```mermaid\n")
-    f.write("xychart-beta\n")
-    f.write('  title "Avg Workspace Freed (GiB)"\n')
-    f.write("  x-axis [")
-    # Collect labels first
-    labels = []
-    for image, option, intensity in sorted(groups.keys())[:50]:
-        labels.append(f'"{option}/{intensity}"')
-    f.write(", ".join(labels))
-    f.write("]\n")
-    f.write('  y-axis "GiB" 0 --> 100\n')
-    f.write("  bar [")
-    # Use all groups; limit to a reasonable number if excessive
-    values = []
-    chart_count = 0
-    for (image, option, intensity), g in sorted(groups.items()):
-        avg_ws = (g["sum_freed_ws"] // (g["count"] or 1)) / (1024**3)
-        values.append(f"{avg_ws:.2f}")
-        chart_count += 1
-        if chart_count >= 50:  # safety cap
-            break
-    f.write(", ".join(values))
-    f.write("]\n")
-    f.write("```\n")

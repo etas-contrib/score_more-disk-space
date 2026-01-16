@@ -1,3 +1,16 @@
+<!--
+ Copyright (c) 2026 Contributors to the Eclipse Foundation
+
+ See the NOTICE file(s) distributed with this work for additional
+ information regarding copyright ownership.
+
+ This program and the accompanying materials are made available under the
+ terms of the Apache License Version 2.0 which is available at
+ https://www.apache.org/licenses/LICENSE-2.0
+
+ SPDX-License-Identifier: Apache-2.0
+-->
+
 # More Disk Space – Benchmark Workflow
 
 This repository provides an on-demand GitHub Actions workflow to evaluate different strategies for freeing disk space on GitHub-hosted Ubuntu runners.
@@ -32,21 +45,6 @@ Each action supports 3-4 intensity levels:
 - **standard**: Aggressive (add haskell, swap, etc.)
 - **max**: Full cleanup (includes packages, folders, swap, docker prune)
 
-This repository provides an on-demand GitHub Actions workflow to evaluate different strategies for freeing disk space on GitHub-hosted Ubuntu runners.
-
-What it does:
- - Runs on ubuntu-22.04 and ubuntu-24.04.
- - Tests multiple options:
-	 - Manual deletion sets (minimal, light, standard, max) based on common large directories.
-	 - Marketplace actions (latest stable):
-		 - jlumbroso/free-disk-space@v1.3.1
-		 - endersonmenezes/free-disk-space@v3
-		 - easimon/maximize-build-space@v10
-		 - AdityaGarg8/remove-unwanted-software@v5
- - Measures cleanup duration and space freed (bytes) for both `/` and the workspace mount.
- - Repeats each combination (configurable, default 3) and computes averages.
- - Publishes a markdown job summary with table and Mermaid chart, uploads CSV artifacts.
-
 ## Run It On Demand
 
 Trigger the workflow manually from the Actions tab:
@@ -60,21 +58,3 @@ Trigger the workflow manually from the Actions tab:
  - Artifacts:
 	 - Per-run CSV: `metrics.csv` with columns: image, option, intensity, repeat, before_root, after_root, freed_root, before_ws, after_ws, freed_ws, duration_seconds.
 	 - Combined CSV: `combined.csv` aggregating all runs for downstream analysis.
-
-## Notes
-
- - “Workspace freed” is the most relevant metric for build/install tasks; “root freed” is also reported for reference.
- - The `easimon/maximize-build-space` action remounts the workspace; measurements reflect space available to build tasks.
- - Intensities map to typical removal sets:
-	 - fast: minimal removals.
-	 - standard: removes common SDKs/tooling.
-	 - max: aggressive cleanup including caches, toolcache, swap, and large packages (where supported).
-
-## Future Work
-
- - Make repeats configurable via input.
- - Add more intensity levels (1–10) and map to presets per action.
- - Provide a reusable composite action that wraps the chosen option based on a single “intensity” parameter.
-
-# more-disk-space
-GitHub Action to make more disk space available in Ubuntu based GitHub Actions runners

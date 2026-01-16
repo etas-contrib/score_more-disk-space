@@ -1,3 +1,16 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
 name: Measure space after cleanup
 description: Ends timer, measures disk space, computes metrics, and uploads CSV artifact
 # This action runs after cleanup actions. For easimon jobs which remount the workspace,
@@ -59,7 +72,7 @@ runs:
         
         mkdir -p metrics
         OUT=metrics/metrics.csv
-        if [[ ! -s "$OUT" ]]; then
+        if [[ ! -f "$OUT" ]]; then
           echo "image,option,intensity,repeat,before_root,after_root,freed_root,before_ws,after_ws,freed_ws,duration_seconds" > "$OUT"
         fi
         echo "${{ inputs.image }},${{ inputs.option }},${{ inputs.intensity }},${{ inputs.repeat }},${{ inputs.before_root_avail }},${{ steps.after.outputs.root_avail }},$FREED_ROOT,${{ inputs.before_ws_avail }},${{ steps.after.outputs.ws_avail }},$FREED_WS,$DURATION" >> "$OUT"
