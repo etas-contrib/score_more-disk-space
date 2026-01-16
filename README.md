@@ -13,7 +13,15 @@
 
 # More-Disk-Space
 
-**Trivial to use and fast disk cleanup for GitHub's Ubuntu runners (22.04 & 24.04).**
+**Trivial to use and fast disk cleanup**
+
+## Safety
+
+This action is **designed exclusively for GitHub-hosted Ubuntu runners**. If run on other environments (local machines, self-hosted runners, or non-Linux systems), it will:
+- ⏭️ **Skip all deletions** (no-op mode)
+- ✅ **Exit successfully** without errors
+
+This ensures safe testing and prevents accidental data loss.
 
 *⚠️ Before using any of these cleanup actions, understand what gets deleted ⚠️*
 
