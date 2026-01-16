@@ -1,0 +1,40 @@
+name: Measure space before cleanup
+description: Prepares metrics directory, measures disk space, and starts timer
+# This action captures the baseline disk state and starts the timer.
+# Outputs are used by measure-after to compute freed space and duration.
+# start_ts must be passed through step outputs (not env vars) to survive workspace remounts.
+outputs:
+  root_avail:
+    description: Available bytes on root filesystem
+    value: ${{ steps.before.outputs.root_avail }}
+  ws_path:
+    description: Workspace path
+    value: ${{ steps.before.outputs.ws_path }}
+  ws_avail:
+    description: Available bytes on workspace filesystem
+    value: ${{ steps.before.outputs.ws_avail }}
+  start_ts:
+    description: Start timestamp in seconds
+    value: ${{ steps.timer.outputs.start_ts }}
+runs:
+  using: composite
+  steps:
+    - name: Prepare metrics dir
+      shell: bash
+      run: mkdir -p metrics
+
+    - name: Measure space before
+      id: before
+      shell: bash
+      run: |
+        ROOT_AVAIL=$(df --output=avail -B1 / | tail -1)
+        WS_PATH=${GITHUB_WORKSPACE:-$PWD}
+        WS_AVAIL=$(df --output=avail -B1 "$WS_PATH" | tail -1)
+        echo "root_avail=$ROOT_AVAIL" >> "$GITHUB_OUTPUT"
+        echo "ws_path=$WS_PATH" >> "$GITHUB_OUTPUT"
+        echo "ws_avail=$WS_AVAIL" >> "$GITHUB_OUTPUT"
+
+    - name: Start timer
+      id: timer
+      shell: bash
+      run: echo "start_ts=$(date +%s)" >> "$GITHUB_OUTPUT"
