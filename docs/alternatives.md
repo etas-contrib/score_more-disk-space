@@ -25,17 +25,19 @@ This document explains the design choices behind **more-disk-space**.
 runners (ubuntu-22.04 & ubuntu-24.04) were benchmarked. For each of them a
 several configurations were selected.
 
+See [benchmark workflow](../.github/workflows/benchmark-disk-space.yml) for details on the used parameters.
+
 Let's group them by disk space cleaned:
 
 ### Minimal Cleanup (~4 GiB)
 
-| Action                      | Space Freed | Duration (range) | GiB/sec (range) |
-| --------------------------- | ----------- | ---------------- | --------------- |
-| **more-disk-space level 1** | 3.7 GiB     | 1s               | 3.7             |
-| **more-disk-space level 2** | 7.6 GiB     | 3-4s             | 1.90-2.53       |
-| jlumbroso                   | 4.0 GiB     | 6-8s             | 0.50-0.66       |
-| enderson                    | 4.0 GiB     | 7-13s            | 0.31-0.57       |
-| adityagarg                  | 4.0 GiB     | 4-6s             | 0.66-0.99       |
+| Action                                                                                                       | Space Freed | Duration (range) | GiB/sec (range) |
+| ------------------------------------------------------------------------------------------------------------ | ----------- | ---------------- | --------------- |
+| **more-disk-space level 1**                                                                                  | 3.7 GiB     | 1s               | 3.7             |
+| **more-disk-space level 2**                                                                                  | 7.6 GiB     | 3-4s             | 1.90-2.53       |
+| [jlumbroso](https://github.com/marketplace/actions/free-disk-space-ubuntu)                                   | 4.0 GiB     | 6-8s             | 0.50-0.66       |
+| [enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners)                            | 4.0 GiB     | 7-13s            | 0.31-0.57       |
+| [adityagarg](https://github.com/marketplace/actions/maximize-build-disk-space-only-remove-unwanted-software) | 4.0 GiB     | 4-6s             | 0.66-0.99       |
 
 **Result:** All tools achieve similar cleanup. more-disk-space is **4-7×
 faster**. And even level 2 is faster, freeing double the space in just 3-4
@@ -43,25 +45,25 @@ seconds.
 
 ### Light Cleanup (~13 GiB)
 
-| Action                      | Space Freed | Duration (range) | GiB/sec (range) |
-| --------------------------- | ----------- | ---------------- | --------------- |
-| **more-disk-space level 3** | 12.3 GiB    | 15-16s           | 0.77-0.82       |
-| jlumbroso                   | 13.8 GiB    | 30-50s           | 0.28-0.46       |
-| enderson                    | 13.8 GiB    | 34-44s           | 0.31-0.41       |
-| adityagarg                  | 19.5 GiB    | 151-187s         | 0.10-0.13       |
+| Action                                                                                                       | Space Freed | Duration (range) | GiB/sec (range) |
+| ------------------------------------------------------------------------------------------------------------ | ----------- | ---------------- | --------------- |
+| **more-disk-space level 3**                                                                                  | 12.3 GiB    | 15-16s           | 0.77-0.82       |
+| [jlumbroso](https://github.com/marketplace/actions/free-disk-space-ubuntu)                                   | 13.8 GiB    | 30-50s           | 0.28-0.46       |
+| [enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners)                            | 13.8 GiB    | 34-44s           | 0.31-0.41       |
+| [adityagarg](https://github.com/marketplace/actions/maximize-build-disk-space-only-remove-unwanted-software) | 19.5 GiB    | 151-187s         | 0.10-0.13       |
 
 **Result:** more-disk-space cleans slightly less than the others, but is **2-6×
 faster** at this level.
 
 ### Standard Cleanup (~20 GiB)
 
-| Action                      | Space Freed | Duration (range) | GiB/sec (range) |
-| --------------------------- | ----------- | ---------------- | --------------- |
-| **more-disk-space level 4** | 22.2 GiB    | 30-49s           | 0.45-0.74       |
-| jlumbroso                   | 22.4 GiB    | 138-177s         | 0.13-0.16       |
-| enderson                    | 17.5 GiB    | 38-46s           | 0.38-0.46       |
-| enderson                    | 31.4 GiB    | 158-190s         | 0.17-0.20       |
-| adityagarg                  | 24.7 GiB    | 142-203s         | 0.12-0.17       |
+| Action                                                                                                       | Space Freed | Duration (range) | GiB/sec (range) |
+| ------------------------------------------------------------------------------------------------------------ | ----------- | ---------------- | --------------- |
+| **more-disk-space level 4**                                                                                  | 22.2 GiB    | 30-49s           | 0.45-0.74       |
+| [jlumbroso](https://github.com/marketplace/actions/free-disk-space-ubuntu)                                   | 22.4 GiB    | 138-177s         | 0.13-0.16       |
+| [enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners)                            | 17.5 GiB    | 38-46s           | 0.38-0.46       |
+| [enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners) (max)                      | 31.4 GiB    | 158-190s         | 0.17-0.20       |
+| [adityagarg](https://github.com/marketplace/actions/maximize-build-disk-space-only-remove-unwanted-software) | 24.7 GiB    | 142-203s         | 0.12-0.17       |
 
 **Result:** Others may clean more (up to 31 GiB), but they are **3-5× slower**
 than more-disk-space level 4.
@@ -125,13 +127,13 @@ APT-based tools sacrifice speed for comprehensiveness. Not worth the trade-off
 for GitHub Actions.
 
 **Performance data:**
-- **adityagarg · standard**: 24.7 GiB in ~177s (0.14 GiB/sec)
+- **[adityagarg](https://github.com/marketplace/actions/maximize-build-disk-space-only-remove-unwanted-software) · standard**: 24.7 GiB in ~177s (0.14 GiB/sec)
   - Only **2 GiB more** than more-disk-space Level 4
   - Takes **135+ seconds longer** (3.4× slower)
-- **enderson · max**: 31.5 GiB in ~183s (0.17 GiB/sec)
+- **[enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners) · max**: 31.5 GiB in ~183s (0.17 GiB/sec)
   - Only **9 GiB more** than more-disk-space Level 4
   - Takes **140+ seconds longer** (3.5× slower)
-- **jlumbroso · max**: ~22 GiB in ~165s (0.13 GiB/sec)
+- **[jlumbroso](https://github.com/marketplace/actions/free-disk-space-ubuntu) · max**: ~22 GiB in ~165s (0.13 GiB/sec)
   - Similar cleanup to more-disk-space Level 4
   - Takes **4× longer** (125+ seconds extra)
 
@@ -229,16 +231,16 @@ more-disk-space Level 3-4 for safe, predictable cleanup instead.
 Complete inventory of deletable items from GitHub runners, categorized by risk
 level.
 
-### 🟢 Safe to Delete (Included in more-disk-space levels)
-| Level | Path(s)                         | Size        | Deletion Speed | Description              |
-| ----- | ------------------------------- | ----------- | -------------- |
-| 1     | `/usr/share/dotnet`             | 1-2 GiB     | Level 3        | .NET runtime & SDKs      |
-| 2     | `/usr/local/lib/android`        | 5-6 GiB     | Level 4        | Android SDK              |
-| 3     | `/opt/ghc`, `/usr/local/.ghcup` | 1-1.5 GiB   | Level 2        | Haskell compiler         |
-| 4     | `/usr/share/swift`              | 1-2 GiB     | Level 1        | Swift compiler           |
-| 5     | `/usr/share/miniconda`          | 1-2 GiB     | Level 3        | Conda Python environment |
-| 6     | `/usr/local/aws-cli`            | 0.5-1 GiB   | Level 2        | AWS CLI v2               |
-| 7     | `/usr/local/share/chromium`     | 0.3-0.5 GiB | Level 1        | Chromium browser         |
+### 🟢 Safe to Delete (Included in more-disk-space)
+| Level | Path(s)                         | Size        | Description              |
+| ----- | ------------------------------- | ----------- | ------------------------ |
+| 1     | `/usr/share/swift`              | 1-2 GiB     | Swift compiler           |
+| 1     | `/usr/local/share/chromium`     | 0.3-0.5 GiB | Chromium browser         |
+| 2     | `/usr/local/aws-cli`            | 0.5-1 GiB   | AWS CLI v2               |
+| 2     | `/opt/ghc`, `/usr/local/.ghcup` | 1-1.5 GiB   | Haskell compiler         |
+| 3     | `/usr/share/dotnet`             | 1-2 GiB     | .NET runtime & SDKs      |
+| 3     | `/usr/share/miniconda`          | 1-2 GiB     | Conda Python environment |
+| 4     | `/usr/local/lib/android`        | 5-6 GiB     | Android SDK              |
 
 **Also safe but not in more-disk-space** (due to APT overhead or marginal
 gains, while increasing deletion time):
@@ -286,7 +288,7 @@ All performance data comes from
 [benchmark-disk-space.yml](../.github/workflows/benchmark-disk-space.yml):
 
 - **Runners tested:** ubuntu-22.04, ubuntu-24.04 (GitHub-hosted free tier)
-- **Actions benchmarked:** manual, jlumbroso, enderson, easimon, adityagarg
+- **Actions benchmarked:** manual, [jlumbroso](https://github.com/marketplace/actions/free-disk-space-ubuntu), [enderson](https://github.com/marketplace/actions/free-disk-space-ubuntu-runners), easimon, [adityagarg](https://github.com/marketplace/actions/maximize-build-disk-space-only-remove-unwanted-software)
 - **Measurements:** Wall-clock time, `df` space readings, individual package
   deletion times
 - **Repeats:** 5 runs per configuration for statistical validity
