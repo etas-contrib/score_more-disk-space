@@ -1,0 +1,84 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: Measure space after cleanup
+description: Ends timer, measures disk space, computes metrics, and uploads CSV artifact
+# This action runs after cleanup actions. For easimon jobs which remount the workspace,
+# the action must be inlined directly in the workflow (see easimon job).
+# Accepts start_ts as input to compute duration without relying on environment variables
+# that may be lost during workspace operations.
+inputs:
+  image:
+    description: Runner image name
+    required: true
+  option:
+    description: Cleanup option name
+    required: true
+  intensity:
+    description: Intensity level (fast/standard/max)
+    required: true
+  repeat:
+    description: Repeat number
+    required: true
+  before_root_avail:
+    description: Available bytes on root before cleanup
+    required: true
+  before_ws_avail:
+    description: Available bytes on workspace before cleanup
+    required: true
+  start_ts:
+    description: Start timestamp in seconds from measure-before
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Measure space after
+      id: after
+      shell: bash
+      run: |
+        ROOT_AVAIL=$(df --output=avail -B1 / | tail -1)
+        WS_PATH=${GITHUB_WORKSPACE:-$PWD}
+        WS_AVAIL=$(df --output=avail -B1 "$WS_PATH" | tail -1)
+        echo "root_avail=$ROOT_AVAIL" >> "$GITHUB_OUTPUT"
+        echo "ws_path=$WS_PATH" >> "$GITHUB_OUTPUT"
+        echo "ws_avail=$WS_AVAIL" >> "$GITHUB_OUTPUT"
+
+    - name: Compute metrics CSV
+      shell: bash
+      run: |
+        END_TS=$(date +%s)
+        START_TS="${{ inputs.start_ts }}"
+        DURATION=$((END_TS - START_TS))
+        FREED_ROOT=$(( ${{ steps.after.outputs.root_avail }} - ${{ inputs.before_root_avail }} ))
+        FREED_WS=$(( ${{ steps.after.outputs.ws_avail }} - ${{ inputs.before_ws_avail }} ))
+        
+        # Validate that cleanup freed at least 100 Bytes on either filesystem
+        MIN_THRESHOLD=100
+        if [[ $FREED_WS -lt $MIN_THRESHOLD && $FREED_ROOT -lt $MIN_THRESHOLD ]]; then
+          echo "❌ Error: Cleanup freed less than 100 Bytes (freed_ws=$(echo "scale=2; $FREED_WS / 1073741824" | bc) GiB, freed_root=$(echo "scale=2; $FREED_ROOT / 1073741824" | bc) GiB)"
+          echo "This indicates the cleanup configuration is not working properly."
+          exit 1
+        fi
+        
+        mkdir -p metrics
+        OUT=metrics/metrics.csv
+        if [[ ! -f "$OUT" ]]; then
+          echo "image,option,intensity,repeat,before_root,after_root,freed_root,before_ws,after_ws,freed_ws,duration_seconds" > "$OUT"
+        fi
+        echo "${{ inputs.image }},${{ inputs.option }},${{ inputs.intensity }},${{ inputs.repeat }},${{ inputs.before_root_avail }},${{ steps.after.outputs.root_avail }},$FREED_ROOT,${{ inputs.before_ws_avail }},${{ steps.after.outputs.ws_avail }},$FREED_WS,$DURATION" >> "$OUT"
+
+    - name: Upload metrics artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: metrics-${{ inputs.image }}-${{ inputs.option }}-${{ inputs.intensity }}-${{ inputs.repeat }}
+        path: metrics/metrics.csv

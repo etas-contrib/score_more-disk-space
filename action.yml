@@ -1,0 +1,36 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+name: More Disk Space
+description: Fast disk cleanup for GitHub's Ubuntu runners (22.04 & 24.04). Frees 3.7–22.2 GiB in 1–40 seconds.
+
+branding:
+  icon: trash-2
+  color: blue
+
+inputs:
+  level:
+    description: |
+      Cleanup level (1-4):
+      - 1: 3.7 GiB in ~1s (swift, chromium)
+      - 2: 7.6 GiB in ~4s (+ aws-cli, haskell) [DEFAULT]
+      - 3: 12.3 GiB in ~16s (+ miniconda, dotnet)
+      - 4: 22.2 GiB in ~40s (+ android)
+    required: false
+    default: '2'
+
+runs:
+  using: node24
+  main: 'index.js'
+  post: 'post.js'
+  post-if: 'always()'
