@@ -9,7 +9,7 @@
 
 //  SPDX-License-Identifier: Apache-2.0
 
-const { execSync, execFileSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 
 
@@ -154,7 +154,7 @@ async function run() {
       console.log(`Space freed: ${freed} GiB`);
     }
     else {
-      console.log('ℹ️  Not running on GitHub-hosted runner - cleanup skipped');
+      console.log('ℹ️  Running on Self-hosted runner - cleanup skipped');
       console.log('');
     }
 
